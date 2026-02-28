@@ -1,0 +1,554 @@
+[
+  {
+    "date": "2026-02-27",
+    "ship": "Norwegian Breakaway",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4819
+  },
+  {
+    "date": "2026-02-27",
+    "ship": "Valiant Lady",
+    "cruise_line": "Virgin Voyages",
+    "passengers": 2860
+  },
+  {
+    "date": "2026-02-28",
+    "ship": "Queen Elizabeth",
+    "cruise_line": "Cunard",
+    "passengers": 2503
+  },
+  {
+    "date": "2026-03-01",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-03-01",
+    "ship": "Costa Fascinosa",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-03-01",
+    "ship": "Viking Sea",
+    "cruise_line": "Viking Ocean",
+    "passengers": 930
+  },
+  {
+    "date": "2026-03-02",
+    "ship": "Marella Discovery 2",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2198
+  },
+  {
+    "date": "2026-03-02",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-03-02",
+    "ship": "Star Flyer",
+    "cruise_line": "Star Clippers",
+    "passengers": 170
+  },
+  {
+    "date": "2026-03-03",
+    "ship": "Disney Treasure",
+    "cruise_line": "Disney Cruise Line",
+    "passengers": 3466
+  },
+  {
+    "date": "2026-03-03",
+    "ship": "Marella Explorer",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2681
+  },
+  {
+    "date": "2026-03-03",
+    "ship": "SeaDream I",
+    "cruise_line": "SeaDream",
+    "passengers": 112
+  },
+  {
+    "date": "2026-03-04",
+    "ship": "Carnival Venezia",
+    "cruise_line": "Carnival Cruise Line",
+    "passengers": 5145
+  },
+  {
+    "date": "2026-03-04",
+    "ship": "Arvia",
+    "cruise_line": "P&O Cruises",
+    "passengers": 6264
+  },
+  {
+    "date": "2026-03-05",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-03-05",
+    "ship": "Explora I",
+    "cruise_line": "Explora Journeys",
+    "passengers": 1473
+  },
+  {
+    "date": "2026-03-05",
+    "ship": "Queen Victoria",
+    "cruise_line": "Cunard",
+    "passengers": 2489
+  },
+  {
+    "date": "2026-03-06",
+    "ship": "Oceania Allura",
+    "cruise_line": "Oceania Cruises",
+    "passengers": 1469
+  },
+  {
+    "date": "2026-03-07",
+    "ship": "Costa Pacifica",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-03-07",
+    "ship": "Silver Ray",
+    "cruise_line": "Silversea",
+    "passengers": 728
+  },
+  {
+    "date": "2026-03-07",
+    "ship": "Brilliance Of The Seas",
+    "cruise_line": "Royal Caribbean",
+    "passengers": 2580
+  },
+  {
+    "date": "2026-03-08",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-03-08",
+    "ship": "Costa Fascinosa",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-03-08",
+    "ship": "Seabourn Ovation",
+    "cruise_line": "Seabourn",
+    "passengers": 638
+  },
+  {
+    "date": "2026-03-09",
+    "ship": "Celebrity Ascent",
+    "cruise_line": "Celebrity Cruises",
+    "passengers": 3950
+  },
+  {
+    "date": "2026-03-09",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-03-10",
+    "ship": "Norwegian Joy",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4620
+  },
+  {
+    "date": "2026-03-10",
+    "ship": "MSC Virtuosa",
+    "cruise_line": "MSC Cruises",
+    "passengers": 5772
+  },
+  {
+    "date": "2026-03-10",
+    "ship": "Wind Surf",
+    "cruise_line": "Windstar",
+    "passengers": 404
+  },
+  {
+    "date": "2026-03-11",
+    "ship": "AIDAsol",
+    "cruise_line": "AIDA Cruises",
+    "passengers": 2686
+  },
+  {
+    "date": "2026-03-11",
+    "ship": "Celebrity Beyond",
+    "cruise_line": "Celebrity Cruises",
+    "passengers": 3373
+  },
+  {
+    "date": "2026-03-11",
+    "ship": "Viking Sea",
+    "cruise_line": "Viking Ocean",
+    "passengers": 930
+  },
+  {
+    "date": "2026-03-12",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-03-12",
+    "ship": "AIDAblu",
+    "cruise_line": "AIDA Cruises",
+    "passengers": 2500
+  },
+  {
+    "date": "2026-03-12",
+    "ship": "Marella Discovery",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2074
+  },
+  {
+    "date": "2026-03-13",
+    "ship": "Valiant Lady",
+    "cruise_line": "Virgin Voyages",
+    "passengers": 2860
+  },
+  {
+    "date": "2026-03-14",
+    "ship": "Enchanted Princess",
+    "cruise_line": "Princess Cruises",
+    "passengers": 4402
+  },
+  {
+    "date": "2026-03-14",
+    "ship": "Oceania Insignia",
+    "cruise_line": "Oceania Cruises",
+    "passengers": 803
+  },
+  {
+    "date": "2026-03-15",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-03-15",
+    "ship": "Marella Discovery 2",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2198
+  },
+  {
+    "date": "2026-03-16",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-03-16",
+    "ship": "Grand Princess",
+    "cruise_line": "Princess Cruises",
+    "passengers": 3122
+  },
+  {
+    "date": "2026-03-16",
+    "ship": "Star Flyer",
+    "cruise_line": "Star Clippers",
+    "passengers": 170
+  },
+  {
+    "date": "2026-03-17",
+    "ship": "Disney Treasure",
+    "cruise_line": "Disney Cruise Line",
+    "passengers": 3466
+  },
+  {
+    "date": "2026-03-17",
+    "ship": "Wind Surf",
+    "cruise_line": "Windstar",
+    "passengers": 404
+  },
+  {
+    "date": "2026-03-17",
+    "ship": "Marella Explorer",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2681
+  },
+  {
+    "date": "2026-03-18",
+    "ship": "Oceania Allura",
+    "cruise_line": "Oceania Cruises",
+    "passengers": 1469
+  },
+  {
+    "date": "2026-03-19",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-03-21",
+    "ship": "Queen Elizabeth",
+    "cruise_line": "Cunard",
+    "passengers": 2503
+  },
+  {
+    "date": "2026-03-21",
+    "ship": "Viking Sea",
+    "cruise_line": "Viking Ocean",
+    "passengers": 930
+  },
+  {
+    "date": "2026-03-22",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-03-22",
+    "ship": "Costa Fascinosa",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-03-23",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-03-24",
+    "ship": "Norwegian Joy",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4620
+  },
+  {
+    "date": "2026-03-25",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-03-26",
+    "ship": "Marella Discovery",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2074
+  },
+  {
+    "date": "2026-03-27",
+    "ship": "Valiant Lady",
+    "cruise_line": "Virgin Voyages",
+    "passengers": 2860
+  },
+  {
+    "date": "2026-03-28",
+    "ship": "Costa Pacifica",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-03-29",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-03-29",
+    "ship": "Costa Fascinosa",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-03-30",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-03-30",
+    "ship": "Star Flyer",
+    "cruise_line": "Star Clippers",
+    "passengers": 170
+  },
+  {
+    "date": "2026-03-31",
+    "ship": "Disney Treasure",
+    "cruise_line": "Disney Cruise Line",
+    "passengers": 3466
+  },
+  {
+    "date": "2026-03-31",
+    "ship": "Marella Explorer",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2681
+  },
+  {
+    "date": "2026-04-01",
+    "ship": "Carnival Venezia",
+    "cruise_line": "Carnival Cruise Line",
+    "passengers": 5145
+  },
+  {
+    "date": "2026-04-01",
+    "ship": "Arvia",
+    "cruise_line": "P&O Cruises",
+    "passengers": 6264
+  },
+  {
+    "date": "2026-04-02",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-04-05",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-04-05",
+    "ship": "Costa Fascinosa",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-04-06",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-04-07",
+    "ship": "Norwegian Joy",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4620
+  },
+  {
+    "date": "2026-04-07",
+    "ship": "MSC Virtuosa",
+    "cruise_line": "MSC Cruises",
+    "passengers": 5772
+  },
+  {
+    "date": "2026-04-09",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-04-10",
+    "ship": "Valiant Lady",
+    "cruise_line": "Virgin Voyages",
+    "passengers": 2860
+  },
+  {
+    "date": "2026-04-11",
+    "ship": "Costa Pacifica",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-04-11",
+    "ship": "Brilliance Of The Seas",
+    "cruise_line": "Royal Caribbean",
+    "passengers": 2580
+  },
+  {
+    "date": "2026-04-12",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-04-12",
+    "ship": "Costa Fascinosa",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-04-13",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-04-13",
+    "ship": "Star Flyer",
+    "cruise_line": "Star Clippers",
+    "passengers": 170
+  },
+  {
+    "date": "2026-04-14",
+    "ship": "Disney Treasure",
+    "cruise_line": "Disney Cruise Line",
+    "passengers": 3466
+  },
+  {
+    "date": "2026-04-14",
+    "ship": "Marella Explorer",
+    "cruise_line": "Marella Cruises",
+    "passengers": 2681
+  },
+  {
+    "date": "2026-04-15",
+    "ship": "Arvia",
+    "cruise_line": "P&O Cruises",
+    "passengers": 6264
+  },
+  {
+    "date": "2026-04-16",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-04-18",
+    "ship": "Costa Pacifica",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-04-19",
+    "ship": "Norwegian Sky",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 2405
+  },
+  {
+    "date": "2026-04-20",
+    "ship": "Norwegian Epic",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 5074
+  },
+  {
+    "date": "2026-04-21",
+    "ship": "Norwegian Joy",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4620
+  },
+  {
+    "date": "2026-04-23",
+    "ship": "Norwegian Aqua",
+    "cruise_line": "Norwegian Cruise Line",
+    "passengers": 4224
+  },
+  {
+    "date": "2026-04-24",
+    "ship": "Valiant Lady",
+    "cruise_line": "Virgin Voyages",
+    "passengers": 2860
+  },
+  {
+    "date": "2026-04-25",
+    "ship": "Costa Pacifica",
+    "cruise_line": "Costa Cruises",
+    "passengers": 3617
+  },
+  {
+    "date": "2026-04-25",
+    "ship": "Brilliance Of The Seas",
+    "cruise_line": "Royal Caribbean",
+    "passengers": 2580
+  }
+]

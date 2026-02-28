@@ -1,0 +1,103 @@
+name: BVI Know Before You Go Briefing
+
+on:
+  schedule:
+    # Pre-Trip Edition: Wednesday at 7am EST (12:00 UTC)
+    - cron: '0 12 * * 3'
+    # Arrival Edition: Saturday at 7am EST (12:00 UTC)
+    - cron: '0 12 * * 6'
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: 'Edition to generate'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - pre-trip
+          - arrival
+
+jobs:
+  generate-briefing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests gitpython google-auth google-auth-oauthlib google-api-python-client
+
+      - name: Write Gmail credentials from secrets
+        run: |
+          echo '${{ secrets.GMAIL_CREDENTIALS }}' > credentials.json
+          echo '${{ secrets.GMAIL_TOKEN }}' > token.json
+
+      - name: Determine edition
+        id: edition
+        run: |
+          if [ "${{ github.event.inputs.edition }}" != "" ] && [ "${{ github.event.inputs.edition }}" != "auto" ]; then
+            echo "edition=${{ github.event.inputs.edition }}" >> $GITHUB_OUTPUT
+          else
+            DOW=$(date -u +%u)
+            if [ "$DOW" -ge 3 ] && [ "$DOW" -le 5 ]; then
+              echo "edition=pre-trip" >> $GITHUB_OUTPUT
+            else
+              echo "edition=arrival" >> $GITHUB_OUTPUT
+            fi
+          fi
+          echo "Edition: $(cat $GITHUB_OUTPUT)"
+
+      - name: Generate briefing and publish
+        env:
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+          GITLAB_REPO_URL: ${{ secrets.GITLAB_REPO_URL }}
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_ACCESS_TOKEN: ${{ secrets.GITLAB_ACCESS_TOKEN }}
+          GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
+          GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
+          EDITION: ${{ steps.edition.outputs.edition }}
+        run: python briefing_pipeline.py --edition "$EDITION"
+
+      - name: Upload Facebook post as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: facebook-post
+          path: facebook-post-*.txt
+          if-no-files-found: ignore
+
+      - name: Send email reminder with Facebook post
+        run: |
+          python - << 'PYEOF'
+          import os, glob, base64, datetime
+          from pathlib import Path
+          from google.oauth2.credentials import Credentials
+          from googleapiclient.discovery import build
+          from email.mime.text import MIMEText
+
+          posts = glob.glob("facebook-post-*.txt")
+          if not posts:
+              print("No Facebook post file found - skipping email")
+              exit(0)
+
+          post_text = Path(posts[0]).read_text()
+          today = datetime.date.today().strftime("%A, %B %d, %Y")
+
+          msg = MIMEText(post_text, "plain")
+          msg["To"] = "ty@boatyball.com"
+          msg["From"] = "ty@boatyball.com"
+          msg["Subject"] = f"📋 BVI Briefing Facebook Post — {today}"
+
+          creds = Credentials.from_authorized_user_file("token.json")
+          service = build("gmail", "v1", credentials=creds)
+          raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+          service.users().messages().send(userId="me", body={"raw": raw}).execute()
+          print(f"Email sent to ty@boatyball.com")
+          PYEOF
