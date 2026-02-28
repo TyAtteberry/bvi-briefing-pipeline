@@ -385,7 +385,7 @@ def generate_hugo_post(week_start, weather, marine, ships, holidays, events, adv
              f"{week_start.strftime('%b %d')}–{week_end.strftime('%b %d, %Y')} "
              f"({edition_label})")
     slug = f"bvi-know-before-you-go-{week_start.strftime('%Y-%m-%d')}-{edition}"
-    pub_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S-04:00")
+    pub_date = datetime.now().strftime("%Y-%m-%d") + "T06:00:00-04:00"
     description = (f"Your weekly BVI charter captain's briefing for "
                    f"{week_start.strftime('%B %d')}–{week_end.strftime('%B %d, %Y')}. "
                    f"Weather, cruise ships, holidays, regattas, and everything you need to know.")
