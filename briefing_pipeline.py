@@ -92,6 +92,8 @@ BVI_EVENTS = [
      "impact": "Racing near West End. Minimal mooring impact."},
     {"name": "51st BVI Spring Regatta & Sailing Festival", "start": "2026-03-23", "end": "2026-03-29",
      "impact": "Major event — Nanny Cay, Norman Island, Peter Island, and Cooper Island moorings will be very busy. Book early!"},
+    {"name": "Hillbilly Flotilla", "start": "2026-03-07", "end": "2026-03-14",
+     "impact": "Large flotilla group — expect busier moorings at Jost Van Dyke (Mar 8), Bitter End/North Sound (Mar 9), Anegada (Mar 10), Leverick Bay (Mar 11), Norman Island (Mar 12), and Cooper Island (Mar 13). Book moorings early!"},
     {"name": "Governor's Cup Regatta", "start": "2026-04-25", "end": "2026-04-25",
      "impact": "Racing in Sir Francis Drake Channel. Some mooring areas may be busy."},
     {"name": "The Moorings Interline Regatta", "start": "2026-10-20", "end": "2026-10-29",
