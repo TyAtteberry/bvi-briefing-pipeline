@@ -36,9 +36,12 @@ jobs:
           pip install requests gitpython google-auth google-auth-oauthlib google-api-python-client
 
       - name: Write Gmail credentials from secrets
+        env:
+          GMAIL_CREDS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
         run: |
-          echo '${{ secrets.GMAIL_CREDENTIALS }}' > credentials.json
-          echo '${{ secrets.GMAIL_TOKEN }}' > token.json
+          python3 -c "import os; open('credentials.json','w').write(os.environ['GMAIL_CREDS'])"
+          python3 -c "import os; open('token.json','w').write(os.environ['GMAIL_TOKEN'])"
 
       - name: Determine edition
         id: edition
