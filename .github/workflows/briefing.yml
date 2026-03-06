@@ -40,8 +40,37 @@ jobs:
           GMAIL_CREDS: ${{ secrets.GMAIL_CREDENTIALS }}
           GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
         run: |
-          python3 -c "import os; open('credentials.json','w').write(os.environ['GMAIL_CREDS'])"
-          python3 -c "import os; open('token.json','w').write(os.environ['GMAIL_TOKEN'])"
+          python3 << 'PYEOF'
+          import os, json
+
+          creds = os.environ.get('GMAIL_CREDS', '')
+          token = os.environ.get('GMAIL_TOKEN', '')
+
+          print(f"GMAIL_CREDS length: {len(creds)}")
+          print(f"GMAIL_TOKEN length: {len(token)}")
+
+          if creds:
+              with open('credentials.json', 'w') as f:
+                  f.write(creds)
+              try:
+                  json.loads(creds)
+                  print("credentials.json: Valid JSON")
+              except:
+                  print("credentials.json: INVALID JSON")
+          else:
+              print("WARNING: GMAIL_CREDENTIALS secret is empty!")
+
+          if token:
+              with open('token.json', 'w') as f:
+                  f.write(token)
+              try:
+                  json.loads(token)
+                  print("token.json: Valid JSON")
+              except:
+                  print("token.json: INVALID JSON")
+          else:
+              print("WARNING: GMAIL_TOKEN secret is empty!")
+          PYEOF
 
       - name: Determine edition
         id: edition
@@ -78,27 +107,44 @@ jobs:
 
       - name: Send email reminder with Facebook post
         run: |
-          python - << 'PYEOF'
-          import os, glob, base64, datetime
+          python3 << 'PYEOF'
+          import os, glob, base64, datetime, json
           from pathlib import Path
-          from google.oauth2.credentials import Credentials
-          from googleapiclient.discovery import build
-          from email.mime.text import MIMEText
 
           posts = glob.glob("facebook-post-*.txt")
           if not posts:
               print("No Facebook post file found - skipping email")
               exit(0)
 
+          # Check if token.json is valid
+          if not Path("token.json").exists():
+              print("token.json not found - skipping email")
+              exit(0)
+
+          token_text = Path("token.json").read_text().strip()
+          print(f"token.json size: {len(token_text)} bytes")
+          print(f"token.json first 20 chars: {token_text[:20]}")
+
+          try:
+              json.loads(token_text)
+              print("token.json is valid JSON")
+          except Exception as e:
+              print(f"token.json is INVALID: {e}")
+              exit(0)
+
           post_text = Path(posts[0]).read_text()
           today = datetime.date.today().strftime("%A, %B %d, %Y")
 
+          from email.mime.text import MIMEText
           msg = MIMEText(post_text, "plain")
           msg["To"] = "ty@boatyball.com"
           msg["From"] = "ty@boatyball.com"
-          msg["Subject"] = f"📋 BVI Briefing Facebook Post — {today}"
+          msg["Subject"] = f"BVI Briefing Facebook Post - {today}"
 
           try:
+              from google.oauth2.credentials import Credentials
+              from googleapiclient.discovery import build
+
               creds = Credentials.from_authorized_user_file("token.json")
               service = build("gmail", "v1", credentials=creds)
               raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
@@ -106,5 +152,7 @@ jobs:
               print(f"Email sent to ty@boatyball.com")
           except Exception as e:
               print(f"Email failed: {e}")
+              import traceback
+              traceback.print_exc()
               print("Facebook post is still available as a workflow artifact")
           PYEOF

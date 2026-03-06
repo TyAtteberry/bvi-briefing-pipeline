@@ -94,6 +94,8 @@ BVI_EVENTS = [
      "impact": "Major event — Nanny Cay, Norman Island, Peter Island, and Cooper Island moorings will be very busy. Book early!"},
     {"name": "Hillbilly Flotilla", "start": "2026-03-07", "end": "2026-03-14",
      "impact": "Large flotilla group — expect busier moorings at Jost Van Dyke (Mar 8), Bitter End/North Sound (Mar 9), Anegada (Mar 10), Leverick Bay (Mar 11), Norman Island (Mar 12), and Cooper Island (Mar 13). Book moorings early!"},
+    {"name": "Salty Dog Rally", "start": "2026-03-07", "end": "2026-03-08",
+     "impact": "11+ boat flotilla at Anegada (Mar 7–8). Expect busier anchorage and mooring field at Anegada's Setting Point. Plan accordingly if heading to Anegada this weekend."},
     {"name": "Governor's Cup Regatta", "start": "2026-04-25", "end": "2026-04-25",
      "impact": "Racing in Sir Francis Drake Channel. Some mooring areas may be busy."},
     {"name": "The Moorings Interline Regatta", "start": "2026-10-20", "end": "2026-10-29",
