@@ -1,18 +1,17 @@
-name: BVI Charter Briefing — Email
+name: BVI Daily Briefing — Email
 
 on:
   schedule:
-    # 7:00 AM EST Wednesday and Saturday (12:00 UTC)
-    - cron: "0 12 * * 3"   # Wednesday
-    - cron: "0 12 * * 6"   # Saturday
+    # 7:00 AM EST daily (12:00 UTC)
+    - cron: "0 12 * * *"
   workflow_dispatch:
     inputs:
-      edition:
-        description: "Edition (auto / pre-trip / arrival)"
-        required: false
-        default: "auto"
       dry_run:
-        description: "Dry run — print to log, don't email"
+        description: "Dry run — preview post in log, don't email"
+        type: boolean
+        default: false
+      force:
+        description: "Force send even if no fresh lifeguard email today"
         type: boolean
         default: false
 
@@ -29,21 +28,31 @@ jobs:
         with:
           python-version: "3.11"
 
-      # No extra pip installs needed — stdlib only (smtplib, json, urllib)
-
-      - name: Run briefing pipeline
-        env:
-          OWM_API_KEY:     ${{ secrets.OWM_API_KEY }}
-          GMAIL_SENDER:    ${{ secrets.GMAIL_SENDER }}
-          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-          GMAIL_APP_PWD:   ${{ secrets.GMAIL_APP_PWD }}
+      - name: Install dependencies
         run: |
-          EDITION="${{ github.event.inputs.edition || 'auto' }}"
-          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+          pip install \
+            google-auth \
+            google-auth-oauthlib \
+            google-auth-httplib2 \
+            google-api-python-client \
+            requests \
+            beautifulsoup4
 
-          ARGS="--edition $EDITION"
-          if [ "$DRY_RUN" = "true" ]; then
+      - name: Run daily briefing pipeline
+        env:
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN:       ${{ secrets.GMAIL_TOKEN }}
+          WINDY_API_KEY:     ${{ secrets.WINDY_API_KEY }}
+          OWM_API_KEY:       ${{ secrets.OWM_API_KEY }}
+          NOTIFY_EMAIL:      ${{ secrets.NOTIFY_EMAIL }}
+          NOTIFY_FROM:       ${{ secrets.NOTIFY_FROM }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
           fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
 
-          python briefing_pipeline.py $ARGS
+          python bvi_daily_briefing.py $ARGS
