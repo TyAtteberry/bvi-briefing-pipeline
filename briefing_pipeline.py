@@ -399,55 +399,39 @@ def send_email(subject, body, week_start, edition):
 
     log.info(f"Sending email to {EMAIL_RECIPIENT}...")
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"]    = GMAIL_SENDER
-    msg["To"]      = EMAIL_RECIPIENT
-    msg.set_charset("utf-8")
-
-    # Plain text version (copy-paste ready)
     plain = (
         f"Copy and paste this into Facebook when ready to post.\n"
-        f"Generated: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}\n"
-        f"Charter Week: {week_start.strftime('%b %d')} – {(week_start + timedelta(days=6)).strftime('%b %d, %Y')}\n"
-        f"Edition: {'Pre-Trip' if edition == 'pre-trip' else 'Arrival'}\n\n"
+        f"Generated: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}\n\n"
         f"{'=' * 60}\n\n"
         f"{body}\n\n"
         f"{'=' * 60}\n"
         f"Post at: https://business.facebook.com\n"
     )
 
-    # HTML version (cleaner to read in Gmail)
     html_body = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     html_body = html_body.replace("\n", "<br>")
-    html = f"""
-    <html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
-      <h2 style="color: #1877F2;">📘 Facebook Post Ready to Publish</h2>
-      <p style="color: #666;">
-        Generated: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}<br>
-        Charter Week: {week_start.strftime('%b %d')} – {(week_start + timedelta(days=6)).strftime('%b %d, %Y')}<br>
-        Edition: {'Pre-Trip' if edition == 'pre-trip' else 'Arrival'}
-      </p>
-      <hr>
-      <div style="background: #f0f2f5; border-radius: 8px; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
+    html = f"""<html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
+<h2 style="color: #1877F2;">Facebook Post Ready to Publish</h2>
+<div style="background: #f0f2f5; border-radius: 8px; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
 {html_body}
-      </div>
-      <hr>
-      <p style="text-align: center;">
-        <a href="https://business.facebook.com" style="background: #1877F2; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">
-          → Open Facebook Business Manager
-        </a>
-      </p>
-    </body></html>
-    """
-
-    msg.attach(MIMEText(plain, "plain"))
-    msg.attach(MIMEText(html,  "html"))
+</div>
+<p style="text-align: center;">
+<a href="https://business.facebook.com" style="background: #1877F2; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">Open Facebook Business Manager</a>
+</p>
+</body></html>"""
 
     try:
+        from email.message import EmailMessage
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = GMAIL_SENDER
+        msg["To"] = EMAIL_RECIPIENT
+        msg.set_content(plain, charset="utf-8")
+        msg.add_alternative(html, subtype="html", charset="utf-8")
+
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(GMAIL_SENDER, GMAIL_APP_PWD)
-            server.sendmail(GMAIL_SENDER, EMAIL_RECIPIENT, msg.as_string().encode("utf-8"))
+            server.send_message(msg)
         log.info("Email sent successfully!")
         return True
     except Exception as e:
