@@ -450,7 +450,7 @@ def send_email(subject, body, week_start, edition):
         log.info("Email sent successfully!")
         return True
     except Exception as e:
-        log.error(f"Email send failed: {e}")f
+        log.error(f"Email send failed: {e}")
         return False
 
 
