@@ -445,12 +445,12 @@ def send_email(subject, body, week_start, edition):
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-    server.login(GMAIL_SENDER, GMAIL_APP_PWD)
-    server.sendmail(GMAIL_SENDER, EMAIL_RECIPIENT, msg.as_bytes())
-        log.info("✅ Email sent successfully!")
+            server.login(GMAIL_SENDER, GMAIL_APP_PWD)
+            server.sendmail(GMAIL_SENDER, EMAIL_RECIPIENT, msg.as_bytes())
+        log.info("Email sent successfully!")
         return True
     except Exception as e:
-        log.error(f"Email send failed: {e}")
+        log.error(f"Email send failed: {e}")f
         return False
 
 
