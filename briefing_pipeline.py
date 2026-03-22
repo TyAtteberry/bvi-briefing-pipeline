@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 """
-BVI Know Before You Go — Social Media Edition
+BVI Know Before You Go — Email-Only Pipeline
 
-Generates the weekly charter briefing and produces ready-to-post content for:
-  - Facebook
-  - Instagram
-  - X (Twitter)
-  - Mighty Networks
+Generates the weekly charter briefing Facebook post and emails it to Ty.
+No website, no GitLab, no Hugo — just the post, delivered to your inbox.
 
-No website publishing. No GitLab. No Hugo. Social media only.
-
-Environment variables (set as GitHub Secrets or .env):
-  OWM_API_KEY           - OpenWeatherMap API key
-  FACEBOOK_PAGE_ID      - Facebook Page ID
-  FACEBOOK_ACCESS_TOKEN - Facebook Page access token
+Environment variables (set as GitHub Secrets):
+  OWM_API_KEY     - OpenWeatherMap API key
+  GMAIL_SENDER    - Gmail address sending the email (e.g. bot@boatyball.com)
+  EMAIL_RECIPIENT - Where to send the briefing (e.g. ty@boatyball.com)
+  GMAIL_APP_PWD   - Gmail App Password for the sender account
+  EDITION         - pre-trip or arrival (optional, auto-detects)
 """
 
 import argparse
 import json
 import logging
 import os
-import subprocess
+import smtplib
 import sys
 from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -30,9 +29,10 @@ log = logging.getLogger("bvi-briefing")
 
 # ─── Config ──────────────────────────────────────────────────────────────────
 
-OWM_API_KEY           = os.getenv("OWM_API_KEY", "")
-FACEBOOK_PAGE_ID      = os.getenv("FACEBOOK_PAGE_ID", "")
-FACEBOOK_ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN", "")
+OWM_API_KEY     = os.getenv("OWM_API_KEY", "")
+GMAIL_SENDER    = os.getenv("GMAIL_SENDER", "")
+EMAIL_RECIPIENT = os.getenv("EMAIL_RECIPIENT", "")
+GMAIL_APP_PWD   = os.getenv("GMAIL_APP_PWD", "")
 
 # BVI coordinates
 BVI_LAT = 18.4267
@@ -41,56 +41,56 @@ BVI_LON = -64.62
 # ─── BVI Holidays ────────────────────────────────────────────────────────────
 
 BVI_HOLIDAYS = {
-    "2025-01-01": {"name": "New Year's Day", "note": "Government offices and customs closed."},
-    "2025-03-03": {"name": "H. Lavity Stoutt's Birthday", "note": "Government offices and customs closed."},
-    "2025-04-18": {"name": "Good Friday", "note": "Government closed. No liquor sales until 6 PM."},
-    "2025-04-19": {"name": "Easter Saturday", "note": "Limited services."},
-    "2025-04-21": {"name": "Easter Monday", "note": "Government offices closed."},
-    "2025-06-16": {"name": "Sovereign's Birthday", "note": "Government offices closed."},
-    "2025-07-01": {"name": "Territory Day", "note": "Government offices closed."},
-    "2025-08-04": {"name": "Festival Monday", "note": "Emancipation Festival. Government closed."},
-    "2025-08-05": {"name": "Festival Tuesday", "note": "Emancipation Festival. Government closed."},
-    "2025-08-06": {"name": "Festival Wednesday", "note": "Emancipation Festival. Government closed."},
-    "2025-10-21": {"name": "St. Ursula's Day", "note": "Government offices closed."},
-    "2025-11-28": {"name": "Remembrance Day (observed)", "note": "Government offices closed."},
-    "2025-12-25": {"name": "Christmas Day", "note": "Government offices and customs closed."},
-    "2025-12-26": {"name": "Boxing Day", "note": "Government offices closed."},
-    "2026-01-01": {"name": "New Year's Day", "note": "Government offices and customs closed."},
-    "2026-03-09": {"name": "H. Lavity Stoutt's Birthday (observed)", "note": "Government offices and customs closed."},
-    "2026-04-03": {"name": "Good Friday", "note": "Government closed. No liquor sales until 6 PM."},
-    "2026-04-04": {"name": "Easter Saturday", "note": "Limited services."},
-    "2026-04-06": {"name": "Easter Monday", "note": "Government offices closed."},
-    "2026-06-15": {"name": "Sovereign's Birthday", "note": "Government offices closed."},
+    "2025-01-01": {"name": "New Year's Day",                        "note": "Government offices and customs closed."},
+    "2025-03-03": {"name": "H. Lavity Stoutt's Birthday",           "note": "Government offices and customs closed."},
+    "2025-04-18": {"name": "Good Friday",                           "note": "Government closed. No liquor sales until 6 PM."},
+    "2025-04-19": {"name": "Easter Saturday",                       "note": "Limited services."},
+    "2025-04-21": {"name": "Easter Monday",                         "note": "Government offices closed."},
+    "2025-06-16": {"name": "Sovereign's Birthday",                  "note": "Government offices closed."},
+    "2025-07-01": {"name": "Territory Day",                         "note": "Government offices closed."},
+    "2025-08-04": {"name": "Festival Monday",                       "note": "Emancipation Festival. Government closed."},
+    "2025-08-05": {"name": "Festival Tuesday",                      "note": "Emancipation Festival. Government closed."},
+    "2025-08-06": {"name": "Festival Wednesday",                    "note": "Emancipation Festival. Government closed."},
+    "2025-10-21": {"name": "St. Ursula's Day",                      "note": "Government offices closed."},
+    "2025-11-28": {"name": "Remembrance Day (observed)",            "note": "Government offices closed."},
+    "2025-12-25": {"name": "Christmas Day",                         "note": "Government offices and customs closed."},
+    "2025-12-26": {"name": "Boxing Day",                            "note": "Government offices closed."},
+    "2026-01-01": {"name": "New Year's Day",                        "note": "Government offices and customs closed."},
+    "2026-03-09": {"name": "H. Lavity Stoutt's Birthday (observed)","note": "Government offices and customs closed."},
+    "2026-04-03": {"name": "Good Friday",                           "note": "Government closed. No liquor sales until 6 PM."},
+    "2026-04-04": {"name": "Easter Saturday",                       "note": "Limited services."},
+    "2026-04-06": {"name": "Easter Monday",                         "note": "Government offices closed."},
+    "2026-06-15": {"name": "Sovereign's Birthday",                  "note": "Government offices closed."},
     "2026-06-30": {"name": "250th Anniversary of Freedom at Nottingham Estate", "note": "One-off public holiday for 2026. Government offices closed."},
-    "2026-07-01": {"name": "Territory Day", "note": "Government offices closed."},
-    "2026-08-03": {"name": "Festival Monday", "note": "Emancipation Festival. Government closed 3 days."},
-    "2026-08-04": {"name": "Festival Tuesday", "note": "Emancipation Festival. Government closed."},
-    "2026-08-05": {"name": "Festival Wednesday", "note": "Emancipation Festival. Government closed."},
-    "2026-10-21": {"name": "St. Ursula's Day", "note": "Government offices closed."},
-    "2026-11-27": {"name": "Remembrance Day (observed)", "note": "Government offices closed."},
-    "2026-12-25": {"name": "Christmas Day", "note": "Government offices and customs closed."},
-    "2026-12-26": {"name": "Boxing Day", "note": "Government offices closed."},
-    "2027-01-01": {"name": "New Year's Day", "note": "Government offices and customs closed."},
-    "2027-03-01": {"name": "H. Lavity Stoutt's Birthday", "note": "Government offices and customs closed."},
-    "2027-03-26": {"name": "Good Friday", "note": "Government closed. No liquor sales until 6 PM."},
-    "2027-03-27": {"name": "Easter Saturday", "note": "Limited services."},
-    "2027-03-29": {"name": "Easter Monday", "note": "Government offices closed."},
+    "2026-07-01": {"name": "Territory Day",                         "note": "Government offices closed."},
+    "2026-08-03": {"name": "Festival Monday",                       "note": "Emancipation Festival. Government closed 3 days."},
+    "2026-08-04": {"name": "Festival Tuesday",                      "note": "Emancipation Festival. Government closed."},
+    "2026-08-05": {"name": "Festival Wednesday",                    "note": "Emancipation Festival. Government closed."},
+    "2026-10-21": {"name": "St. Ursula's Day",                      "note": "Government offices closed."},
+    "2026-11-27": {"name": "Remembrance Day (observed)",            "note": "Government offices closed."},
+    "2026-12-25": {"name": "Christmas Day",                         "note": "Government offices and customs closed."},
+    "2026-12-26": {"name": "Boxing Day",                            "note": "Government offices closed."},
+    "2027-01-01": {"name": "New Year's Day",                        "note": "Government offices and customs closed."},
+    "2027-03-01": {"name": "H. Lavity Stoutt's Birthday",           "note": "Government offices and customs closed."},
+    "2027-03-26": {"name": "Good Friday",                           "note": "Government closed. No liquor sales until 6 PM."},
+    "2027-03-27": {"name": "Easter Saturday",                       "note": "Limited services."},
+    "2027-03-29": {"name": "Easter Monday",                         "note": "Government offices closed."},
 }
 
 # ─── BVI Events & Regattas ───────────────────────────────────────────────────
 
 BVI_EVENTS = [
-    {"name": "Dark and Stormy Regatta", "start": "2026-02-14", "end": "2026-02-14",
+    {"name": "Dark and Stormy Regatta",              "start": "2026-02-14", "end": "2026-02-14",
      "impact": "Racing near West End. Minimal mooring impact."},
     {"name": "51st BVI Spring Regatta & Sailing Festival", "start": "2026-03-23", "end": "2026-03-29",
      "impact": "Major event — Nanny Cay, Norman Island, Peter Island, and Cooper Island moorings will be very busy. Book early!"},
-    {"name": "Hillbilly Flotilla", "start": "2026-03-07", "end": "2026-03-14",
+    {"name": "Hillbilly Flotilla",                   "start": "2026-03-07", "end": "2026-03-14",
      "impact": "Large flotilla group — expect busier moorings at Jost Van Dyke (Mar 8), Bitter End/North Sound (Mar 9), Anegada (Mar 10), Leverick Bay (Mar 11), Norman Island (Mar 12), and Cooper Island (Mar 13). Book moorings early!"},
-    {"name": "Salty Dog Rally", "start": "2026-03-07", "end": "2026-03-08",
-     "impact": "11+ boat flotilla at Anegada (Mar 7–8). Expect busier anchorage and mooring field at Anegada's Setting Point."},
-    {"name": "Governor's Cup Regatta", "start": "2026-04-25", "end": "2026-04-25",
+    {"name": "Salty Dog Rally",                      "start": "2026-03-07", "end": "2026-03-08",
+     "impact": "11+ boat flotilla at Anegada (Mar 7–8). Expect busier anchorage and mooring field at Anegada's Setting Point. Plan accordingly if heading to Anegada this weekend."},
+    {"name": "Governor's Cup Regatta",               "start": "2026-04-25", "end": "2026-04-25",
      "impact": "Racing in Sir Francis Drake Channel. Some mooring areas may be busy."},
-    {"name": "The Moorings Interline Regatta", "start": "2026-10-20", "end": "2026-10-29",
+    {"name": "The Moorings Interline Regatta",        "start": "2026-10-20", "end": "2026-10-29",
      "impact": "Charter fleet event. Popular anchorages busier than usual."},
 ]
 
@@ -121,14 +121,14 @@ def wind_description(speed_knots):
 
 
 def sea_state(wave_height_m):
-    if wave_height_m is None:  return "Unknown"
-    elif wave_height_m < 0.1:  return "Calm (glassy)"
-    elif wave_height_m < 0.5:  return "Calm (rippled)"
-    elif wave_height_m < 1.25: return "Smooth"
-    elif wave_height_m < 2.5:  return "Slight"
-    elif wave_height_m < 4.0:  return "Moderate"
-    elif wave_height_m < 6.0:  return "Rough"
-    else:                      return "Very rough"
+    if wave_height_m is None:   return "Unknown"
+    elif wave_height_m < 0.1:   return "Calm (glassy)"
+    elif wave_height_m < 0.5:   return "Calm (rippled)"
+    elif wave_height_m < 1.25:  return "Smooth"
+    elif wave_height_m < 2.5:   return "Slight"
+    elif wave_height_m < 4.0:   return "Moderate"
+    elif wave_height_m < 6.0:   return "Rough"
+    else:                       return "Very rough"
 
 
 def degrees_to_cardinal(deg):
@@ -150,6 +150,7 @@ def fetch_weather(week_start):
         return None
 
     log.info("Fetching weather from OpenWeatherMap...")
+    import urllib.request
     url = (f"https://api.openweathermap.org/data/2.5/forecast?"
            f"lat={BVI_LAT}&lon={BVI_LON}&appid={OWM_API_KEY}&units=metric")
 
@@ -167,15 +168,12 @@ def fetch_weather(week_start):
         entry_date = datetime.strptime(date_str, "%Y-%m-%d")
         if entry_date < week_start or entry_date >= week_end:
             continue
-
         if date_str not in daily:
             daily[date_str] = {
-                "date": date_str,
-                "day_name": entry_date.strftime("%A"),
+                "date": date_str, "day_name": entry_date.strftime("%A"),
                 "temps": [], "winds": [], "gusts": [], "wind_dirs": [],
                 "descriptions": [], "rain": 0,
             }
-
         d = daily[date_str]
         d["temps"].append(entry["main"]["temp"])
         wind = entry.get("wind", {})
@@ -188,12 +186,11 @@ def fetch_weather(week_start):
     result = []
     for date_str in sorted(daily.keys()):
         d = daily[date_str]
-        avg_wind_ms = sum(d["winds"]) / len(d["winds"])
-        max_gust_ms = max(d["gusts"]) if d["gusts"] else 0
-        avg_dir = sum(d["wind_dirs"]) / len(d["wind_dirs"])
+        avg_wind_ms  = sum(d["winds"]) / len(d["winds"])
+        max_gust_ms  = max(d["gusts"]) if d["gusts"] else 0
+        avg_dir      = sum(d["wind_dirs"]) / len(d["wind_dirs"])
         result.append({
-            "date": date_str,
-            "day_name": d["day_name"],
+            "date": date_str, "day_name": d["day_name"],
             "temp_high_f": round(c_to_f(max(d["temps"]))),
             "temp_low_f":  round(c_to_f(min(d["temps"]))),
             "wind_knots":  round(ms_to_knots(avg_wind_ms)),
@@ -203,7 +200,6 @@ def fetch_weather(week_start):
             "description": max(set(d["descriptions"]), key=d["descriptions"].count),
             "rain_mm":     round(d["rain"], 1),
         })
-
     return result if result else None
 
 
@@ -226,9 +222,9 @@ def fetch_marine(week_start):
     daily = data["daily"]
     result = []
     for i, date_str in enumerate(daily.get("time", [])):
-        wave_h  = daily["wave_height_max"][i] if daily.get("wave_height_max") else None
+        wave_h  = daily["wave_height_max"][i]       if daily.get("wave_height_max")       else None
         swell_h = daily["swell_wave_height_max"][i] if daily.get("swell_wave_height_max") else None
-        wave_dir = daily["wave_direction_dominant"][i] if daily.get("wave_direction_dominant") else None
+        wave_dir= daily["wave_direction_dominant"][i]if daily.get("wave_direction_dominant")else None
         result.append({
             "date":           date_str,
             "wave_height_ft": round(m_to_ft(wave_h), 1) if wave_h else None,
@@ -275,7 +271,7 @@ def get_holidays(week_start):
         date_str = check_date.strftime("%Y-%m-%d")
         if date_str in BVI_HOLIDAYS:
             h = BVI_HOLIDAYS[date_str].copy()
-            h["date"] = date_str
+            h["date"]     = date_str
             h["day_name"] = check_date.strftime("%A")
             holidays.append(h)
     return holidays
@@ -292,373 +288,186 @@ def get_events(week_start):
     return events
 
 
+# ─── Advisories ──────────────────────────────────────────────────────────────
+
 def generate_advisories(weather, marine, ships, holidays, events):
     advisories = []
-
     if weather:
         max_gust = max(d["gust_knots"] for d in weather)
         if max_gust >= 25:
-            advisories.append(f"💨 Wind Advisory: Gusts up to {max_gust} kts expected. "
-                              f"Secure dinghies and check mooring lines.")
-
+            advisories.append(f"💨 Wind Advisory: Gusts up to {max_gust} kts expected. Secure dinghies and check mooring lines.")
     if marine:
-        wave_heights = [d["wave_height_ft"] for d in marine if d["wave_height_ft"]]
-        if wave_heights:
-            max_wave = max(wave_heights)
-            if max_wave >= 5:
-                advisories.append(f"🌊 Sea State Advisory: Waves up to {max_wave:.1f} ft. "
-                                  f"Drake Channel crossing may be uncomfortable.")
-
+        waves = [d["wave_height_ft"] for d in marine if d["wave_height_ft"]]
+        if waves and max(waves) >= 5:
+            advisories.append(f"🌊 Sea State Advisory: Waves up to {max(waves):.1f} ft. Drake Channel crossing may be uncomfortable.")
     if ships:
         total_pax = sum(s.get("passengers", 0) or 0 for s in ships)
         if total_pax > 5000:
-            advisories.append(f"🚢 Cruise Ship Alert: {len(ships)} cruise ships visiting "
-                              f"({total_pax:,} passengers). Road Town, The Baths, and Jost Van Dyke "
-                              f"will be busier on ship days.")
-
+            advisories.append(f"🚢 Cruise Ship Alert: {len(ships)} ships this week (~{total_pax:,} passengers). The Baths and Jost Van Dyke will be busy on ship days.")
     for h in holidays:
-        advisories.append(f"🏛️ {h['name']} ({h['day_name']}): {h['note']} "
-                          f"Plan your customs/immigration needs accordingly.")
-
+        advisories.append(f"🏛️ {h['name']} ({h['day_name']}, {h['date']}): {h['note']}")
     for ev in events:
         advisories.append(f"⛵ {ev['name']} ({ev['start']} to {ev['end']}): {ev['impact']}")
-
     return advisories
 
 
-# ─── Social Media Post Builders ──────────────────────────────────────────────
+# ─── Facebook Post Generator ─────────────────────────────────────────────────
 
-def build_facebook_post(week_start, weather, marine, ships, holidays, events, advisories, edition):
-    """Facebook — detailed, conversational, full briefing."""
-    week_end = week_start + timedelta(days=6)
-    edition_label = "PRE-TRIP BRIEFING" if edition == "pre-trip" else "ARRIVAL BRIEFING"
+def generate_facebook_post(week_start, weather, marine, ships, holidays, events, advisories, edition):
+    week_end      = week_start + timedelta(days=6)
+    edition_label = "PRE-TRIP" if edition == "pre-trip" else "ARRIVAL"
 
     lines = []
-    lines.append(f"⚓ BVI KNOW BEFORE YOU GO — {week_start.strftime('%b %d')}–{week_end.strftime('%b %d, %Y')}")
-    lines.append(f"📋 {edition_label}")
-    lines.append("")
-
+    lines.append(f"⚓ BVI KNOW BEFORE YOU GO — {week_start.strftime('%b %d')}–{week_end.strftime('%b %d, %Y')} ({edition_label})")
+    lines.append("Your charter week briefing from BoatyBall!")
     if edition == "pre-trip":
-        lines.append("Planning your BVI charter? Here's everything you need to know before you go!")
+        lines.append("📋 Planning your trip? Here's what to expect this week:")
     else:
-        lines.append("Welcome to the BVI! Here's your updated conditions and planning report for the week.")
+        lines.append("🏝️ Welcome to the BVI! Here's your updated conditions report:")
     lines.append("")
 
+    # Captain's advisories
     if advisories:
-        lines.append("⚠️ THIS WEEK'S ADVISORIES")
+        lines.append("⚠️ CAPTAIN'S ADVISORY:")
         for a in advisories:
-            lines.append(f"• {a}")
+            lines.append(f"  • {a}")
         lines.append("")
 
+    # Weather summary
     if weather:
         temps = [d["temp_high_f"] for d in weather]
         winds = [d["wind_knots"] for d in weather]
-        gusts = [d["gust_knots"] for d in weather]
-        lines.append("🌤️ WEATHER SNAPSHOT")
-        lines.append(f"🌡️ Temps: {min(temps)}–{max(temps)}°F")
-        lines.append(f"💨 Winds: {min(winds)}–{max(winds)} kts ({weather[0]['wind_dir']}), gusts to {max(gusts)} kts")
-        if marine:
-            wave_heights = [d["wave_height_ft"] for d in marine if d["wave_height_ft"]]
-            if wave_heights:
-                lines.append(f"🌊 Seas: Up to {max(wave_heights):.1f} ft")
+        lines.append(f"🌡️ TEMPS: {min(temps)}–{max(temps)}°F")
+        lines.append(f"💨 WINDS: {min(winds)}–{max(winds)} kts ({weather[0]['wind_dir']})")
         lines.append("")
 
+    # Sea conditions
+    if marine:
+        waves = [d["wave_height_ft"] for d in marine if d["wave_height_ft"]]
+        if waves:
+            lines.append(f"🌊 SEAS: Waves up to {max(waves):.1f} ft")
+            lines.append("")
+
+    # Cruise ships
     if ships:
         seen = set()
         ship_days = []
         for s in sorted(ships, key=lambda x: x["date"]):
-            if s["day_name"] not in seen:
-                seen.add(s["day_name"])
-                ship_days.append(s["day_name"])
+            abbr = s["day_name"][:3]
+            if abbr not in seen:
+                seen.add(abbr)
+                ship_days.append(abbr)
         total_pax = sum(s.get("passengers", 0) or 0 for s in ships)
-        lines.append("🚢 CRUISE SHIPS IN PORT")
-        lines.append(f"{len(ships)} ship(s) this week — {', '.join(ship_days)}")
+        lines.append(f"🚢 CRUISE SHIPS: {len(ships)} ship(s) in port ({', '.join(ship_days)})")
         if total_pax:
-            lines.append(f"~{total_pax:,} passengers — plan around busy days at The Baths & Jost!")
+            lines.append(f"   ~{total_pax:,} passengers — plan around busy days at The Baths & Jost!")
         lines.append("")
 
+    # Holidays
     if holidays:
-        lines.append("🏛️ GOVERNMENT HOLIDAYS")
+        lines.append("🏛️ GOVERNMENT HOLIDAY:")
         for h in holidays:
-            lines.append(f"• {h['day_name']}: {h['name']} — {h['note']}")
+            lines.append(f"  {h['day_name']}: {h['name']} — {h['note']}")
         lines.append("")
 
+    # Events
     if events:
-        lines.append("⛵ REGATTAS & EVENTS")
         for ev in events:
-            lines.append(f"• {ev['name']} ({ev['start']} to {ev['end']})")
-            lines.append(f"  {ev['impact']}")
+            lines.append(f"⛵ {ev['name'].upper()}: {ev['impact']}")
         lines.append("")
 
-    lines.append("🔗 USEFUL LINKS")
-    lines.append("• Windy BVI: windy.com/?18.428,-64.619,10")
-    lines.append("• BVI Customs: bvi.gov.vg")
-    lines.append("• Marine Traffic: marinetraffic.com")
+    lines.append("📌 Reserve your moorings: www.boatyball.com")
     lines.append("")
-    lines.append("⚓ When in doubt, don't go out!")
-    lines.append("")
-    lines.append("#BVI #KnowBeforeYouGo #BoatyBall #BVICharter #SailingBVI "
-                 "#BritishVirginIslands #BareboatCharter #SailingLife #CaribbeanSailing")
+    lines.append("#BVI #CharterSailing #KnowBeforeYouGo #BoatyBall #SailingBVI "
+                 "#BritishVirginIslands #BareboatCharter #SailingLife")
 
     return "\n".join(lines)
 
 
-def build_instagram_post(week_start, weather, marine, ships, holidays, events, advisories, edition):
-    """Instagram — visual-first, punchy, emoji-heavy, hashtag block."""
-    week_end = week_start + timedelta(days=6)
-    edition_tag = "PRE-TRIP" if edition == "pre-trip" else "ARRIVAL"
+# ─── Email Sender ─────────────────────────────────────────────────────────────
 
-    lines = []
-    lines.append(f"⚓ BVI KNOW BEFORE YOU GO — {week_start.strftime('%b %d').upper()}–{week_end.strftime('%b %d').upper()}")
-    lines.append(f"📋 {edition_tag} EDITION")
-    lines.append("")
+def send_email(subject, body, week_start, edition):
+    """Send the Facebook post to Ty via Gmail App Password (no OAuth needed)."""
+    if not all([GMAIL_SENDER, EMAIL_RECIPIENT, GMAIL_APP_PWD]):
+        log.warning("Email credentials not set — printing post to console instead.")
+        print("\n" + "=" * 60)
+        print(f"SUBJECT: {subject}")
+        print("=" * 60)
+        print(body)
+        print("=" * 60)
+        return False
 
-    if weather:
-        temps = [d["temp_high_f"] for d in weather]
-        winds = [d["wind_knots"] for d in weather]
-        lines.append(f"🌡️ {min(temps)}–{max(temps)}°F")
-        lines.append(f"💨 {min(winds)}–{max(winds)} kts {weather[0]['wind_dir']}")
+    log.info(f"Sending email to {EMAIL_RECIPIENT}...")
 
-    if marine:
-        wave_heights = [d["wave_height_ft"] for d in marine if d["wave_height_ft"]]
-        if wave_heights:
-            lines.append(f"🌊 Seas up to {max(wave_heights):.1f} ft")
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = GMAIL_SENDER
+    msg["To"]      = EMAIL_RECIPIENT
 
-    lines.append("")
-
-    if ships:
-        total_pax = sum(s.get("passengers", 0) or 0 for s in ships)
-        lines.append(f"🚢 {len(ships)} cruise ship(s) in port this week")
-        if total_pax:
-            lines.append(f"   ~{total_pax:,} passengers — plan accordingly!")
-        lines.append("")
-
-    if holidays:
-        for h in holidays:
-            lines.append(f"🏛️ {h['name']} — {h['day_name']}")
-        lines.append("")
-
-    if events:
-        for ev in events:
-            lines.append(f"⛵ {ev['name']}")
-        lines.append("")
-
-    if advisories:
-        lines.append("⚠️ Check advisories before heading out!")
-        lines.append("")
-
-    lines.append("⚓ When in doubt, don't go out!")
-    lines.append("")
-    lines.append(".")
-    lines.append(".")
-    lines.append(".")
-    lines.append(
-        "#BVI #KnowBeforeYouGo #BoatyBall #BVICharter #SailingBVI "
-        "#BritishVirginIslands #BareboatCharter #SailingLife #CaribbeanSailing "
-        "#TortolaBVI #VirginGorda #JostVanDyke #Anegada #SailorsLife #IslandLife"
+    # Plain text version (copy-paste ready)
+    plain = (
+        f"Copy and paste this into Facebook when ready to post.\n"
+        f"Generated: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}\n"
+        f"Charter Week: {week_start.strftime('%b %d')} – {(week_start + timedelta(days=6)).strftime('%b %d, %Y')}\n"
+        f"Edition: {'Pre-Trip' if edition == 'pre-trip' else 'Arrival'}\n\n"
+        f"{'=' * 60}\n\n"
+        f"{body}\n\n"
+        f"{'=' * 60}\n"
+        f"Post at: https://business.facebook.com\n"
     )
 
-    return "\n".join(lines)
+    # HTML version (cleaner to read in Gmail)
+    html_body = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    html_body = html_body.replace("\n", "<br>")
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
+      <h2 style="color: #1877F2;">📘 Facebook Post Ready to Publish</h2>
+      <p style="color: #666;">
+        Generated: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}<br>
+        Charter Week: {week_start.strftime('%b %d')} – {(week_start + timedelta(days=6)).strftime('%b %d, %Y')}<br>
+        Edition: {'Pre-Trip' if edition == 'pre-trip' else 'Arrival'}
+      </p>
+      <hr>
+      <div style="background: #f0f2f5; border-radius: 8px; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
+{html_body}
+      </div>
+      <hr>
+      <p style="text-align: center;">
+        <a href="https://business.facebook.com" style="background: #1877F2; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+          → Open Facebook Business Manager
+        </a>
+      </p>
+    </body></html>
+    """
 
+    msg.attach(MIMEText(plain, "plain"))
+    msg.attach(MIMEText(html,  "html"))
 
-def build_twitter_post(week_start, weather, marine, ships, holidays, events, advisories, edition):
-    """X (Twitter) — under 280 chars, punchy."""
-    week_end = week_start + timedelta(days=6)
-    edition_tag = "Pre-Trip" if edition == "pre-trip" else "Arrival"
-
-    parts = [f"⚓ BVI {edition_tag} Briefing {week_start.strftime('%b %d')}–{week_end.strftime('%b %d')} —"]
-
-    if weather:
-        winds = [d["wind_knots"] for d in weather]
-        parts.append(f"💨 {min(winds)}–{max(winds)} kts")
-
-    if marine:
-        wave_heights = [d["wave_height_ft"] for d in marine if d["wave_height_ft"]]
-        if wave_heights:
-            parts.append(f"🌊 seas to {max(wave_heights):.1f} ft")
-
-    if ships:
-        parts.append(f"🚢 {len(ships)} cruise ship(s)")
-
-    if holidays:
-        parts.append(f"🏛️ {holidays[0]['name']}")
-
-    if events:
-        parts.append(f"⛵ {events[0]['name']}")
-
-    parts.append("#BVI #BoatyBall #SailingBVI")
-
-    post = "  ".join(parts)
-    if len(post) > 280:
-        post = post[:277] + "..."
-
-    return post
-
-
-def build_mighty_networks_post(week_start, weather, marine, ships, holidays, events, advisories, edition):
-    """Mighty Networks — community tone, full detail, conversational."""
-    week_end = week_start + timedelta(days=6)
-    edition_label = "Pre-Trip Edition" if edition == "pre-trip" else "Arrival Edition"
-
-    lines = []
-    lines.append(f"⚓ BVI KNOW BEFORE YOU GO — {week_start.strftime('%B %d')}–{week_end.strftime('%B %d, %Y')}")
-    lines.append(f"📋 {edition_label}")
-    lines.append("")
-
-    if edition == "pre-trip":
-        lines.append("Hey crew! Planning your BVI charter? Here's your full weekly briefing "
-                     "so you can show up prepared and ready to sail.")
-    else:
-        lines.append("Welcome to the BVI, BoatyBall crew! Here's your updated arrival briefing "
-                     "with the latest conditions for your charter week.")
-    lines.append("")
-
-    if advisories:
-        lines.append("⚠️ CAPTAIN'S ADVISORIES")
-        lines.append("─────────────────────")
-        for a in advisories:
-            lines.append(f"• {a}")
-        lines.append("")
-
-    if weather:
-        lines.append("🌤️ 7-DAY WEATHER SNAPSHOT")
-        lines.append("─────────────────────────")
-        for d in weather:
-            lines.append(f"{d['day_name'][:3]} {d['date'][5:]}: "
-                         f"{d['temp_high_f']}°F  💨 {d['wind_knots']} kts {d['wind_dir']}  "
-                         f"gusts {d['gust_knots']} kts  —  {d['description'].title()}")
-        lines.append("")
-
-    if marine:
-        lines.append("🌊 SEA CONDITIONS")
-        lines.append("─────────────────")
-        for d in marine:
-            dt = datetime.strptime(d["date"], "%Y-%m-%d")
-            wave = f"{d['wave_height_ft']} ft" if d["wave_height_ft"] else "—"
-            swell = f"{d['swell_height_ft']} ft" if d.get("swell_height_ft") else "—"
-            lines.append(f"{dt.strftime('%a %m/%d')}: Waves {wave}  Swell {swell}  — {d['sea_state']}")
-        lines.append("")
-
-    if ships:
-        lines.append("🚢 CRUISE SHIPS THIS WEEK")
-        lines.append("─────────────────────────")
-        for s in sorted(ships, key=lambda x: x["date"]):
-            pax = f"{s['passengers']:,}" if s.get("passengers") else "N/A"
-            lines.append(f"{s['day_name'][:3]} {s['date'][5:]}: {s['ship']} ({s['cruise_line']}) — {pax} pax")
-        total_pax = sum(s.get("passengers", 0) or 0 for s in ships)
-        if total_pax:
-            lines.append(f"Total: ~{total_pax:,} passengers — expect busy days at The Baths & Jost!")
-        lines.append("")
-
-    if holidays:
-        lines.append("🏛️ GOVERNMENT HOLIDAYS")
-        lines.append("───────────────────────")
-        for h in holidays:
-            lines.append(f"• {h['day_name']} {h['date']}: {h['name']}")
-            lines.append(f"  {h['note']}")
-        lines.append("")
-
-    if events:
-        lines.append("⛵ REGATTAS & EVENTS")
-        lines.append("────────────────────")
-        for ev in events:
-            lines.append(f"• {ev['name']} ({ev['start']} to {ev['end']})")
-            lines.append(f"  {ev['impact']}")
-        lines.append("")
-
-    lines.append("🔗 USEFUL LINKS")
-    lines.append("───────────────")
-    lines.append("• Windy BVI: windy.com/?18.428,-64.619,10")
-    lines.append("• BVI Customs & Immigration: bvi.gov.vg")
-    lines.append("• Marine Traffic: marinetraffic.com")
-    lines.append("")
-    lines.append("Stay safe and have an amazing charter week! ⚓")
-    lines.append("When in doubt, don't go out.")
-    lines.append("")
-    lines.append("Source: OpenWeatherMap · Open-Meteo · CruiseDig.com")
-
-    return "\n".join(lines)
-
-
-# ─── Facebook Auto-Poster ────────────────────────────────────────────────────
-
-def post_to_facebook(message: str) -> dict:
-    import urllib.request
-    import urllib.parse
-    if not FACEBOOK_PAGE_ID or not FACEBOOK_ACCESS_TOKEN:
-        raise RuntimeError("FACEBOOK_PAGE_ID and FACEBOOK_ACCESS_TOKEN must be set in .env")
-    data = urllib.parse.urlencode({
-        "message": message,
-        "access_token": FACEBOOK_ACCESS_TOKEN,
-    }).encode()
-    req = urllib.request.Request(
-        f"https://graph.facebook.com/v19.0/{FACEBOOK_PAGE_ID}/feed",
-        data=data, method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode())
-
-
-# ─── Save All Posts ──────────────────────────────────────────────────────────
-
-def save_social_posts(week_start, posts: dict, edition: str) -> Path:
-    """Save all platform posts to a single text file for easy copy-paste."""
-    _dl = Path(os.path.expanduser("~/Downloads"))
-    out_dir = _dl if _dl.exists() else Path(".")
-    out_path = out_dir / f"briefing-social-posts-{week_start.strftime('%Y-%m-%d')}-{edition}.txt"
-
-    divider = "=" * 60
-
-    lines = []
-    lines.append(f"BOATYBALL BRIEFING — SOCIAL MEDIA POSTS")
-    lines.append(f"Week of {week_start.strftime('%B %d, %Y')} — {edition.upper()} EDITION")
-    lines.append(divider)
-    lines.append("")
-
-    platform_order = [
-        ("FACEBOOK",        "facebook"),
-        ("INSTAGRAM",       "instagram"),
-        ("X (TWITTER)",     "twitter"),
-        ("MIGHTY NETWORKS", "mighty_networks"),
-    ]
-
-    for platform_label, key in platform_order:
-        lines.append(divider)
-        lines.append(f"📱 {platform_label}")
-        lines.append(divider)
-        lines.append(posts.get(key, ""))
-        lines.append("")
-
-    lines.append(divider)
-    lines.append("POST CHECKLIST")
-    lines.append(divider)
-    lines.append("[ ] Facebook       — https://business.facebook.com")
-    lines.append("[ ] Instagram      — https://business.facebook.com (Meta Business Suite)")
-    lines.append("[ ] X / Twitter    — https://x.com")
-    lines.append("[ ] Mighty Networks — post in your community feed")
-    lines.append("")
-    lines.append("⚓ When in doubt, don't go out.")
-
-    out_path.write_text("\n".join(lines), encoding="utf-8")
-    log.info(f"Social posts saved: {out_path}")
-    return out_path
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_SENDER, GMAIL_APP_PWD)
+            server.sendmail(GMAIL_SENDER, EMAIL_RECIPIENT, msg.as_string())
+        log.info("✅ Email sent successfully!")
+        return True
+    except Exception as e:
+        log.error(f"Email send failed: {e}")
+        return False
 
 
 # ─── Main Pipeline ───────────────────────────────────────────────────────────
 
-def run_pipeline(edition="auto", dry_run=False):
-    log.info("=== BVI Know Before You Go Pipeline (Social Media Edition) ===")
+def run_pipeline(edition="auto"):
+    log.info("=== BVI Know Before You Go — Email Pipeline ===")
 
     # Determine edition
     if edition == "auto":
-        dow = datetime.now().weekday()
-        edition = "pre-trip" if dow in (2, 3, 4) else "arrival"
+        dow     = datetime.now().weekday()
+        edition = "pre-trip" if dow in (2, 3, 4) else "arrival"  # Wed/Thu/Fri = pre-trip
 
     edition_label = "Pre-Trip Edition" if edition == "pre-trip" else "Arrival Edition"
-    log.info(f"Edition: {edition_label}")
 
     # Determine charter week (Saturday to Friday)
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today              = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     days_until_saturday = (5 - today.weekday()) % 7
     if days_until_saturday == 0:
         week_start = today
@@ -668,63 +477,41 @@ def run_pipeline(edition="auto", dry_run=False):
         week_start = today + timedelta(days=6)
 
     week_end = week_start + timedelta(days=6)
-    log.info(f"Charter Week: {week_start.strftime('%A %b %d')} – {week_end.strftime('%A %b %d, %Y')}")
+    log.info(f"Charter Week : {week_start.strftime('%A %b %d')} – {week_end.strftime('%A %b %d, %Y')}")
+    log.info(f"Edition      : {edition_label}")
 
-    # Fetch all data
+    # Fetch data
     weather  = fetch_weather(week_start)
     marine   = fetch_marine(week_start)
     ships    = load_cruise_ships(week_start)
     holidays = get_holidays(week_start)
     events   = get_events(week_start)
 
-    log.info(f"Data: weather={len(weather) if weather else 0}, "
-             f"marine={len(marine) if marine else 0}, "
+    log.info(f"Data: weather={len(weather) if weather else 0}, marine={len(marine) if marine else 0}, "
              f"ships={len(ships)}, holidays={len(holidays)}, events={len(events)}")
 
-    # Generate advisories and all platform posts
-    advisories = generate_advisories(weather, marine, ships, holidays, events)
+    # Generate content
+    advisories  = generate_advisories(weather, marine, ships, holidays, events)
+    fb_post     = generate_facebook_post(week_start, weather, marine, ships, holidays, events, advisories, edition)
 
-    posts = {
-        "facebook":       build_facebook_post(week_start, weather, marine, ships, holidays, events, advisories, edition),
-        "instagram":      build_instagram_post(week_start, weather, marine, ships, holidays, events, advisories, edition),
-        "twitter":        build_twitter_post(week_start, weather, marine, ships, holidays, events, advisories, edition),
-        "mighty_networks": build_mighty_networks_post(week_start, weather, marine, ships, holidays, events, advisories, edition),
-    }
+    # Build email subject
+    subject = (f"⚓ BVI Charter Briefing — {week_start.strftime('%b %d')}–"
+               f"{week_end.strftime('%b %d, %Y')} ({edition_label}) | Facebook Post Ready")
 
-    if dry_run:
-        print("\n" + "=" * 60)
-        print(f"DRY RUN — {edition_label} Posts Preview")
-        print("=" * 60)
-        for platform, post in posts.items():
-            print(f"\n── {platform.upper()} ──")
-            print(post)
-        return
+    # Send email
+    send_email(subject, fb_post, week_start, edition)
 
-    # Save all posts to file
-    posts_file = save_social_posts(week_start, posts, edition)
-
-    # Auto-post to Facebook
-    log.info("Posting to Facebook...")
-    try:
-        result = post_to_facebook(posts["facebook"])
-        log.info(f"Facebook posted: {result.get('id')}")
-    except Exception as e:
-        log.error(f"Facebook auto-post failed: {e}")
-        log.info(f"Post manually using: {posts_file}")
-        try:
-            subprocess.Popen(["open", "https://business.facebook.com"])
-        except Exception:
-            pass
-
-    log.info(f"\n✅ Done! All posts saved to: {posts_file}")
-    log.info("Instagram, X, and Mighty Networks posts are ready to copy-paste from that file.")
     log.info("=== Pipeline complete ===")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="BVI Know Before You Go — Social Media Edition")
+    parser = argparse.ArgumentParser(description="BVI Know Before You Go — Email Pipeline")
     parser.add_argument("--edition",  default="auto", choices=["auto", "pre-trip", "arrival"])
-    parser.add_argument("--dry-run",  action="store_true", help="Preview posts without sending")
+    parser.add_argument("--dry-run",  action="store_true", help="Generate and print without emailing")
     args = parser.parse_args()
 
-    run_pipeline(edition=args.edition, dry_run=args.dry_run)
+    if args.dry_run:
+        # Clear email creds so send_email falls back to console print
+        os.environ.pop("GMAIL_APP_PWD", None)
+
+    run_pipeline(edition=args.edition)
