@@ -46,4 +46,4 @@ jobs:
             ARGS="$ARGS --dry-run"
           fi
 
-          python bvi_briefing.py $ARGS
+          python briefing_pipeline.py $ARGS
