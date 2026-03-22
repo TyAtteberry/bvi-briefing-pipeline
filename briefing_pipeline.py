@@ -403,6 +403,7 @@ def send_email(subject, body, week_start, edition):
     msg["Subject"] = subject
     msg["From"]    = GMAIL_SENDER
     msg["To"]      = EMAIL_RECIPIENT
+    msg.set_charset("utf-8")
 
     # Plain text version (copy-paste ready)
     plain = (
@@ -446,7 +447,7 @@ def send_email(subject, body, week_start, edition):
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(GMAIL_SENDER, GMAIL_APP_PWD)
-            server.sendmail(GMAIL_SENDER, EMAIL_RECIPIENT, msg.as_bytes())
+            server.sendmail(GMAIL_SENDER, EMAIL_RECIPIENT, msg.as_string().encode("utf-8"))
         log.info("Email sent successfully!")
         return True
     except Exception as e:
