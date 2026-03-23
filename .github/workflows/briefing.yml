@@ -45,7 +45,7 @@ jobs:
           WINDY_API_KEY:     ${{ secrets.WINDY_API_KEY }}
           OWM_API_KEY:       ${{ secrets.OWM_API_KEY }}
           NOTIFY_EMAIL:      ${{ secrets.NOTIFY_EMAIL }}
-          NOTIFY_FROM:       ${{ secrets.NOTIFY_FROM }}
+          NOTIFY_FROM:       ${{ secrets.GMAIL_SENDER }}
         run: |
           ARGS=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
