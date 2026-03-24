@@ -245,23 +245,24 @@ def parse_email_conditions(body: str, subject: str = "") -> dict:
     # Alert level from subject AND body
     subject_clean = re.sub(r'\*+', '', subject)
 
-    # Check body lines first for advisory pattern (e.g. "Tuesday 24th - 07:00am - Surf Advisory! Small Craft Caution!")
-    for line in lines[:10]:
-        m = re.search(r'\d{1,2}:\d{2}[ap]m\s*[–\-]+\s*(.+)', line, re.IGNORECASE)
-        if m:
-            candidate = m.group(1).strip().rstrip('!')
-            if any(kw in candidate.upper() for kw in ['ADVISORY', 'CAUTION', 'WARNING', 'ALERT']):
-                conditions["alert_title"] = candidate
-                break
+    # Extract advisory from subject — format is "Date – Time – Advisory Title!"
+    # Split on any dash/em-dash variant and grab the last meaningful segment
+    subject_parts = re.split(r'[–—\-]+', subject_clean)
+    for part in reversed(subject_parts):
+        part = part.strip().rstrip('!')
+        if any(kw in part.upper() for kw in ['ADVISORY', 'CAUTION', 'WARNING', 'ALERT']):
+            conditions["alert_title"] = part
+            break
 
-    # Fall back to subject line if nothing found in body
+    # Also check first 10 body lines for advisory pattern as fallback
     if not conditions["alert_title"]:
-        parts = re.split(r'[–\-]', subject_clean)
-        for part in reversed(parts):
-            part = part.strip()
-            if any(kw in part.upper() for kw in ['ADVISORY', 'CAUTION', 'WARNING', 'ALERT']):
-                conditions["alert_title"] = part.rstrip('!').strip()
-                break
+        for line in lines[:10]:
+            m = re.search(r'\d{1,2}:\d{2}[ap]m\s*[–—\-]+\s*(.+)', line, re.IGNORECASE)
+            if m:
+                candidate = m.group(1).strip().rstrip('!')
+                if any(kw in candidate.upper() for kw in ['ADVISORY', 'CAUTION', 'WARNING', 'ALERT']):
+                    conditions["alert_title"] = candidate
+                    break
 
     scan = (subject_clean + " " + " ".join(lines[:10])).upper()
     if any(kw in scan for kw in ['GALE WARNING', 'STORM WARNING', 'HURRICANE']):
