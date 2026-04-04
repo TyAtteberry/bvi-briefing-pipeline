@@ -55,4 +55,4 @@ jobs:
             ARGS="$ARGS --force"
           fi
 
-          python bvi_daily_briefing.py $ARGS
+          python briefing_pipeline.py $ARGS
