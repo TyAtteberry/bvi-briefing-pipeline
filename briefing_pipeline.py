@@ -100,6 +100,8 @@ BVI_EVENTS = [
      "impact": "Racing in Sir Francis Drake Channel. Some mooring areas may be busy."},
     {"name": "The Moorings Interline Regatta", "start": "2026-10-20", "end": "2026-10-29",
      "impact": "Charter fleet event. Popular anchorages busier than usual."},
+    {"name": "Treasure the BVI Meetup", "start": "2026-04-18", "end": "2026-04-19",
+     "impact": "Event at Scrub Island Resort. Reservable moorings at Scrub Island OUT OF SERVICE Apr 18-19. Plan alternative mooring or anchorage."},
 ]
 
 
