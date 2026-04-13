@@ -102,6 +102,12 @@ BVI_EVENTS = [
      "impact": "Charter fleet event. Popular anchorages busier than usual."},
     {"name": "Treasure the BVI Meetup", "start": "2026-04-18", "end": "2026-04-19",
      "impact": "Event at Scrub Island Resort. Reservable moorings at Scrub Island OUT OF SERVICE Apr 18-19. Plan alternative mooring or anchorage."},
+    {"name": "Black Rock Yacht Club Flotilla", "start": "2026-04-13", "end": "2026-04-19",
+     "impact": "10-boat flotilla in the BVI this week. Stops include Norman Island (Sun), VGYH (Mon), Bitter End/North Sound (Tue-Wed), Anegada (Thu), Great Harbor JVD (Fri). Expect busier moorings at these stops."},
+    {"name": "Hingham Yacht Club Flotilla", "start": "2026-04-20", "end": "2026-04-26",
+     "impact": "19-boat flotilla in the BVI next week. Stops include Norman Island (Sun), VGYH (Mon), Bitter End/North Sound (Tue-Wed), Anegada (Thu), Great Harbor JVD (Fri), return to Norman (Sat). Expect busier moorings throughout the week."},
+    {"name": "Treasure the BVI Meetup", "start": "2026-04-18", "end": "2026-04-19",
+     "impact": "Event at Scrub Island Resort. All reservable moorings at Scrub Island OUT OF SERVICE Apr 18-19. Plan alternative mooring or anchorage."},
 ]
 
 
